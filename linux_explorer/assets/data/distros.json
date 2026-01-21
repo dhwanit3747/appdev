@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Ubuntu",
+    "description": "User-friendly Debian-based Linux distribution by Canonical.",
+    "iso": "https://releases.ubuntu.com",
+    "size": "3.6 GB",
+    "logo": "assets/images/ubuntu.png"
+  },
+  {
+    "name": "Kali Linux",
+    "description": "Security-focused Linux distribution used for penetration testing.",
+    "iso": "https://www.kali.org/get-kali/",
+    "size": "4.0 GB",
+    "logo": "assets/images/kali.png"
+  },
+  {
+    "name": "Arch Linux",
+    "description": "Lightweight, rolling-release Linux for advanced users.",
+    "iso": "https://archlinux.org/download/",
+    "size": "800 MB",
+    "logo": "assets/images/arch.png"
+  },
+  {
+    "name": "Linux Mint",
+    "description": "Ubuntu-based Linux focused on stability and ease of use.",
+    "iso": "https://linuxmint.com/download.php",
+    "size": "2.8 GB",
+    "logo": "assets/images/mint.png"
+  },
+  {
+    "name": "Fedora",
+    "description": "Cutting-edge Linux sponsored by Red Hat.",
+    "iso": "https://getfedora.org",
+    "size": "2.0 GB",
+    "logo": "assets/images/fedora.png"
+  },
+  {
+    "name": "Debian",
+    "description": "Universal operating system known for stability.",
+    "iso": "https://www.debian.org/distrib/",
+    "size": "3.7 GB",
+    "logo": "assets/images/debian.png"
+  }
+]
