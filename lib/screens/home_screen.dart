@@ -4,9 +4,14 @@ import 'package:provider/provider.dart';
 import '../models/linux_distro.dart';
 import '../providers/distro_provider.dart';
 import '../providers/theme_provider.dart';
+
 import '../widgets/distro_card.dart';
 import '../widgets/stat_card.dart';
+import '../widgets/visual_chart_widgets.dart';
 import 'detail_screen.dart';
+import '../screens/settings_screen.dart';
+import 'compare_screen.dart';
+import 'favorites_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +22,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
+  bool _showAnalytics = false;
 
   @override
   void dispose() {
@@ -62,11 +68,38 @@ class _HomeScreenState extends State<HomeScreen> {
               _sortMenuItem(SortOption.releaseYear, "Release Year", Icons.calendar_today_rounded, distroProvider),
             ],
           ),
+          // Compare action
+          IconButton(
+            icon: Badge(
+              label: Text('${distroProvider.compareList.length}'),
+              isLabelVisible: distroProvider.compareList.isNotEmpty,
+              backgroundColor: Colors.greenAccent.shade700,
+              textColor: Colors.white,
+              child: const Icon(Icons.compare_arrows_rounded),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CompareScreen(),
+                ),
+              );
+            },
+            tooltip: "Compare Distributions",
+          ),
           // Theme toggle
           IconButton(
             icon: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded),
             onPressed: themeProvider.toggleTheme,
             tooltip: "Toggle Theme",
+          ),
+          // Logout
+          IconButton(
+            icon: const Icon(Icons.settings_rounded),
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+            },
+            tooltip: "Settings",
           ),
         ],
       ),
@@ -76,6 +109,9 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 // Stats Dashboard
                 _buildStatsDashboard(context, distroProvider),
+
+                // Analytics dashboard
+                _buildAnalyticsSection(context, distroProvider, isDark),
 
                 // Search Bar
                 _buildSearchBar(context, distroProvider, isDark),
@@ -173,11 +209,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: StatCard(
-              icon: Icons.favorite_rounded,
-              label: "Favorites",
-              value: "${provider.favorites.length}",
-              color: const Color(0xFFE91E63),
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FavoritesScreen()),
+                );
+              },
+              child: StatCard(
+                icon: Icons.favorite_rounded,
+                label: "Favorites",
+                value: "${provider.favorites.length}",
+                color: const Color(0xFFE91E63),
+              ),
             ),
           ),
         ],
@@ -209,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
               : null,
           contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
           filled: true,
-          fillColor: isDark ? const Color(0xFF1E133F).withOpacity(0.5) : Colors.white,
+          fillColor: isDark ? const Color(0xFF1E133F).withValues(alpha: 0.5) : Colors.white,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(28),
             borderSide: BorderSide.none,
@@ -231,6 +275,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFamilyChips(BuildContext context, DistroProvider provider) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
       height: 44,
       child: ListView.builder(
@@ -244,6 +289,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ? Theme.of(context).primaryColor
               : DistroProvider.familyColor(family);
 
+          final Color textColor;
+          if (isSelected) {
+            textColor = color.computeLuminance() > 0.6 ? Colors.black87 : Colors.white;
+          } else {
+            textColor = isDark ? color.withValues(alpha: 0.9) : color;
+          }
+
           return Padding(
             padding: const EdgeInsets.only(right: 6),
             child: FilterChip(
@@ -252,15 +304,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     ? 'All'
                     : DistroProvider.familyDisplayName(family),
                 style: TextStyle(
-                  color: isSelected ? Colors.white : null,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: textColor,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                   fontSize: 12,
                 ),
               ),
               selected: isSelected,
               onSelected: (_) => provider.setFamily(family),
-              selectedColor: color.withOpacity(0.85),
-              checkmarkColor: Colors.white,
+              selectedColor: color.withValues(alpha: 0.85),
+              backgroundColor: color.withValues(alpha: 0.15),
+              checkmarkColor: color.computeLuminance() > 0.6 ? Colors.black87 : Colors.white,
               visualDensity: VisualDensity.compact,
             ),
           );
@@ -347,6 +400,80 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(
         builder: (context) => DetailScreen(distro: distro),
       ),
+    );
+  }
+
+  Widget _buildAnalyticsSection(BuildContext context, DistroProvider provider, bool isDark) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: InkWell(
+            onTap: () {
+              setState(() {
+                _showAnalytics = !_showAnalytics;
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    _showAnalytics ? Icons.analytics_rounded : Icons.analytics_outlined,
+                    size: 16,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    _showAnalytics ? "Hide Visual Analytics" : "Show Visual Analytics",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  Icon(
+                    _showAnalytics ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                    size: 18,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (_showAnalytics) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SegmentedFamilyChart(
+              familyCounts: provider.familyCounts,
+              totalCount: provider.totalDistros,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.sd_card_rounded, color: Color(0xFF00BCD4), size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        "Average ISO Footprint: ${provider.averageIsoSize.toStringAsFixed(1)} GB across all distributions.",
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

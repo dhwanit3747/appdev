@@ -1,4 +1,5 @@
 name: linux_explorer
+
 description: Linux Distributions Explorer App
 publish_to: none
 
@@ -12,13 +13,17 @@ dependencies:
   provider: ^6.0.5
   url_launcher: ^6.2.5
   animations: ^2.0.11
+  flutter_svg: any
+  shared_preferences: any
+  photo_view: any
+  firebase_core: ^4.10.0
+  firebase_auth: ^6.5.2
+  cloud_firestore: ^6.5.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
-
-
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true

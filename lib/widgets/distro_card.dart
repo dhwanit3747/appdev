@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/linux_distro.dart';
 import '../providers/distro_provider.dart';
+import '../utils/url_helper.dart';
 
 class DistroCard extends StatelessWidget {
   final LinuxDistro distro;
@@ -48,13 +49,33 @@ class DistroCard extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      distroColor.withOpacity(isDark ? 0.2 : 0.08),
-                      familyColor.withOpacity(isDark ? 0.1 : 0.04),
+                      distroColor.withValues(alpha: isDark ? 0.2 : 0.08),
+                      familyColor.withValues(alpha: isDark ? 0.1 : 0.04),
                     ],
                   ),
                 ),
                 child: Stack(
                   children: [
+                    // Website button (top‑left)
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: GestureDetector(
+                        onTap: () => UrlHelper.launchExternalUrl(context, distro.website),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.black26 : Colors.white70,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.public,
+                            size: 18,
+                            color: Colors.blueAccent,
+                          ),
+                        ),
+                      ),
+                    ),
                     // Letter avatar
                     Center(
                       child: Container(
@@ -65,14 +86,14 @@ class DistroCard extends StatelessWidget {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              distroColor.withOpacity(0.85),
-                              distroColor.withOpacity(0.6),
+                              distroColor.withValues(alpha: 0.85),
+                              distroColor.withValues(alpha: 0.6),
                             ],
                           ),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: distroColor.withOpacity(0.3),
+                              color: distroColor.withValues(alpha: 0.3),
                               blurRadius: 12,
                               spreadRadius: 1,
                             ),
@@ -142,7 +163,7 @@ class DistroCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: familyColor.withOpacity(0.15),
+                          color: familyColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -219,8 +240,8 @@ class DistroListTile extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                distroColor.withOpacity(0.85),
-                distroColor.withOpacity(0.6),
+                distroColor.withValues(alpha: 0.85),
+                distroColor.withValues(alpha: 0.6),
               ],
             ),
             shape: BoxShape.circle,
@@ -245,7 +266,7 @@ class DistroListTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
               decoration: BoxDecoration(
-                color: familyColor.withOpacity(0.12),
+                color: familyColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -275,13 +296,32 @@ class DistroListTile extends StatelessWidget {
             ),
           ],
         ),
-        trailing: GestureDetector(
-          onTap: onFavoriteTap,
-          child: Icon(
-            isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-            color: isFavorite ? Colors.redAccent : Colors.grey,
-            size: 22,
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: () => UrlHelper.launchExternalUrl(context, distro.website),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Icon(
+                  Icons.public,
+                  color: Colors.blueAccent,
+                  size: 22,
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: onFavoriteTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Icon(
+                  isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  color: isFavorite ? Colors.redAccent : Colors.grey,
+                  size: 22,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

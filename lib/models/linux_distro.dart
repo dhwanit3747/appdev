@@ -20,6 +20,12 @@ class LinuxDistro {
   final List<String> pros;
   final List<String> cons;
   final int popularityRank;
+  final List<String> architectures;
+  final List<String> desktopEnvs;
+  final String ramRequirement;
+  final String storageRequirement;
+  final String stabilityLevel;
+  final String beginnerDifficulty;
   final String color;
 
   LinuxDistro({
@@ -44,6 +50,12 @@ class LinuxDistro {
     required this.pros,
     required this.cons,
     required this.popularityRank,
+    required this.architectures,
+    required this.desktopEnvs,
+    required this.ramRequirement,
+    required this.storageRequirement,
+    required this.stabilityLevel,
+    required this.beginnerDifficulty,
     required this.color,
   });
 
@@ -63,7 +75,13 @@ class LinuxDistro {
       packageManager: json['package_manager'] ?? 'Unknown',
       defaultDesktop: json['default_desktop'] ?? 'Unknown',
       availableDesktops: _toStringList(json['available_desktops']),
-      releaseModel: json['release_model'] ?? 'Unknown',
+      releaseModel: json['release_model'] ?? 'Fixed',
+      architectures: _toStringList(json['architectures']),
+      desktopEnvs: _toStringList(json['desktop_envs']),
+      ramRequirement: json['ram_requirement'] ?? 'Unknown',
+      storageRequirement: json['storage_requirement'] ?? 'Unknown',
+      stabilityLevel: json['stability_level'] ?? 'Stable',
+      beginnerDifficulty: json['beginner_difficulty'] ?? 'Easy',
       targetAudience: _toStringList(json['target_audience']),
       useCases: _toStringList(json['use_cases']),
       initSystem: json['init_system'] ?? 'Unknown',

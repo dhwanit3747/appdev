@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "254919619021",
+    "project_id": "linux-explorer-c008d",
+    "storage_bucket": "linux-explorer-c008d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:254919619021:android:2751522dc246b02bead484",
+        "android_client_info": {
+          "package_name": "com.example.linux_explorer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAICd1zk4IKaNSxvdlVSm7TwWFMLbjX6T4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

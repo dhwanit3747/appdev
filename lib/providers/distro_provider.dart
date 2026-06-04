@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../providers/auth_provider.dart';
 import '../models/linux_distro.dart';
 
 enum SortOption { alphabetical, popularity, isoSize, releaseYear }
@@ -18,7 +20,14 @@ class DistroProvider extends ChangeNotifier {
   ViewMode _viewMode = ViewMode.grid;
   bool _isLoading = true;
 
-  // Getters
+  AuthUser? _currentUser;
+  String? _lastUid; // Track last UID to prevent infinite reloads
+
+  DistroProvider() {
+    loadDistros();
+  }
+
+  // ---------- Getters ----------
   List<LinuxDistro> get allDistros => _allDistros;
   List<LinuxDistro> get filteredDistros => _filteredDistros;
   Set<String> get favorites => _favorites;
@@ -37,6 +46,27 @@ class DistroProvider extends ChangeNotifier {
       _allDistros.where((d) => _compareList.contains(d.name)).toList();
 
   int get totalDistros => _allDistros.length;
+
+  double get maxIsoSize {
+    if (_allDistros.isEmpty) return 1.0;
+    return _allDistros.map((d) => d.isoSize).reduce((a, b) => a > b ? a : b);
+  }
+
+  double get minIsoSize {
+    if (_allDistros.isEmpty) return 0.0;
+    return _allDistros.map((d) => d.isoSize).reduce((a, b) => a < b ? a : b);
+  }
+
+  double get averageIsoSize {
+    if (_allDistros.isEmpty) return 0.0;
+    final total = _allDistros.map((d) => d.isoSize).reduce((a, b) => a + b);
+    return total / _allDistros.length;
+  }
+
+  int get maxPopularityRank {
+    if (_allDistros.isEmpty) return 100;
+    return _allDistros.map((d) => d.popularityRank).reduce((a, b) => a > b ? a : b);
+  }
 
   List<String> get allFamilies {
     final families = _allDistros.map((d) => d.family).toSet().toList();
@@ -76,10 +106,12 @@ class DistroProvider extends ChangeNotifier {
         return 'Gentoo';
       case 'slackware':
         return 'Slackware';
+      case 'android':
+        return 'Android';
       case 'independent':
         return 'Independent';
       default:
-        return family;
+        return family[0].toUpperCase() + family.substring(1);
     }
   }
 
@@ -98,6 +130,8 @@ class DistroProvider extends ChangeNotifier {
         return const Color(0xFF54487A);
       case 'slackware':
         return const Color(0xFF4458A0);
+      case 'android':
+        return const Color(0xFF3DDC84);
       case 'independent':
         return const Color(0xFF607D8B);
       default:
@@ -105,7 +139,25 @@ class DistroProvider extends ChangeNotifier {
     }
   }
 
-  // Load data
+  // ---------- Update user (called by ProxyProvider) ----------
+  /// Only reloads data when the user actually changes (prevents infinite loop).
+  void updateUser(AuthUser? user) {
+    final newUid = user?.uid;
+    if (newUid == _lastUid) return; // Same user — skip reload.
+    _lastUid = newUid;
+    _currentUser = user;
+
+    if (_currentUser == null) {
+      // User logged out — clear favorites
+      _favorites.clear();
+      notifyListeners();
+    } else {
+      // New user — reload favorites
+      _loadFavorites();
+    }
+  }
+
+  // ---------- Load data ----------
   Future<void> loadDistros() async {
     try {
       _isLoading = true;
@@ -116,6 +168,11 @@ class DistroProvider extends ChangeNotifier {
       _allDistros = decoded.map((item) => LinuxDistro.fromJson(item)).toList();
       _applyFilters();
 
+      // Load favorites if user is logged in
+      if (_currentUser != null) {
+        await _loadFavorites();
+      }
+
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -125,53 +182,79 @@ class DistroProvider extends ChangeNotifier {
     }
   }
 
-  // Search
+  /// Load favorites from local storage.
+  Future<void> _loadFavorites() async {
+    if (_currentUser == null) return;
+    _favorites.clear();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getStringList('favorites_${_currentUser!.uid}') ?? [];
+      _favorites.addAll(saved);
+    } catch (e) {
+      debugPrint("Local favorites load failed: $e");
+    }
+    notifyListeners();
+  }
+
+  // ---------- Search ----------
   void setSearchQuery(String query) {
     _searchQuery = query;
     _applyFilters();
     notifyListeners();
   }
 
-  // Family filter
+  // ---------- Family filter ----------
   void setFamily(String family) {
     _selectedFamily = family;
     _applyFilters();
     notifyListeners();
   }
 
-  // Use case filter
+  // ---------- Use case filter ----------
   void setUseCase(String useCase) {
     _selectedUseCase = useCase;
     _applyFilters();
     notifyListeners();
   }
 
-  // Sort
+  // ---------- Sort ----------
   void setSortOption(SortOption option) {
     _sortOption = option;
     _applyFilters();
     notifyListeners();
   }
 
-  // View mode
+  // ---------- View mode ----------
   void setViewMode(ViewMode mode) {
     _viewMode = mode;
     notifyListeners();
   }
 
-  // Favorites
+  // ---------- Favorites ----------
   bool isFavorite(String name) => _favorites.contains(name);
 
-  void toggleFavorite(String name) {
+  void toggleFavorite(String name) async {
     if (_favorites.contains(name)) {
       _favorites.remove(name);
     } else {
       _favorites.add(name);
     }
     notifyListeners();
+
+    // Persist — only if user is logged in
+    if (_currentUser == null) return;
+    final uid = _currentUser!.uid;
+
+    // Save locally
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('favorites_$uid', _favorites.toList());
+    } catch (e) {
+      debugPrint('Error saving favorites to preferences: $e');
+    }
   }
 
-  // Compare
+  // ---------- Compare ----------
   bool isInCompare(String name) => _compareList.contains(name);
 
   bool toggleCompare(String name) {
@@ -192,7 +275,7 @@ class DistroProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Internal filter & sort logic
+  // ---------- Internal filter & sort ----------
   void _applyFilters() {
     var result = List<LinuxDistro>.from(_allDistros);
 

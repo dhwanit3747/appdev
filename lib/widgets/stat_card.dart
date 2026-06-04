@@ -25,13 +25,13 @@ class StatCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            color.withOpacity(isDark ? 0.2 : 0.08),
-            color.withOpacity(isDark ? 0.08 : 0.03),
+            color.withValues(alpha: isDark ? 0.2 : 0.08),
+            color.withValues(alpha: isDark ? 0.08 : 0.03),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: color.withOpacity(isDark ? 0.2 : 0.12),
+          color: color.withValues(alpha: isDark ? 0.2 : 0.12),
           width: 1,
         ),
       ),

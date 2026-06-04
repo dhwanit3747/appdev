@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/linux_distro.dart';
 import '../providers/distro_provider.dart';
+import '../utils/url_helper.dart';
+import '../widgets/visual_chart_widgets.dart';
 
 class DetailScreen extends StatelessWidget {
   final LinuxDistro distro;
@@ -18,19 +19,7 @@ class DetailScreen extends StatelessWidget {
   }
 
   Future<void> _launchUrl(BuildContext context, String urlString) async {
-    if (urlString.isEmpty) return;
-    final uri = Uri.parse(urlString);
-    try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error opening link: $e"), behavior: SnackBarBehavior.floating),
-        );
-      }
-    }
+    await UrlHelper.launchExternalUrl(context, urlString);
   }
 
   @override
@@ -48,7 +37,7 @@ class DetailScreen extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 220,
             pinned: true,
-            backgroundColor: distroColor.withOpacity(isDark ? 0.4 : 0.9),
+            backgroundColor: distroColor.withValues(alpha: isDark ? 0.4 : 0.9),
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: BoxDecoration(
@@ -56,8 +45,8 @@ class DetailScreen extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      distroColor.withOpacity(isDark ? 0.3 : 0.7),
-                      distroColor.withOpacity(isDark ? 0.15 : 0.4),
+                      distroColor.withValues(alpha: isDark ? 0.3 : 0.7),
+                      distroColor.withValues(alpha: isDark ? 0.15 : 0.4),
                       isDark ? const Color(0xFF0B0518) : const Color(0xFFF4F0FA),
                     ],
                   ),
@@ -71,14 +60,14 @@ class DetailScreen extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          distroColor.withOpacity(0.9),
-                          distroColor.withOpacity(0.6),
+                          distroColor.withValues(alpha: 0.9),
+                          distroColor.withValues(alpha: 0.6),
                         ],
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: distroColor.withOpacity(0.4),
+                          color: distroColor.withValues(alpha: 0.4),
                           blurRadius: 24,
                           spreadRadius: 4,
                         ),
@@ -192,6 +181,57 @@ class DetailScreen extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
+                  // Analytics & Visualizations
+                  _buildSectionTitle("Analytics & Visualizations", Icons.bar_chart_rounded),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF150D2E) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark ? Colors.white10 : Colors.black12,
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        CircularRankGauge(
+                          rank: distro.popularityRank,
+                          maxRank: provider.maxPopularityRank,
+                          color: distroColor,
+                          size: 76,
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              VisualProgressBar(
+                                value: distro.isoSize,
+                                maxValue: provider.maxIsoSize,
+                                color: distroColor,
+                                label: "ISO Footprint Comparison",
+                                valueText: distro.formattedIsoSize,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                "Popularity is #${distro.popularityRank} out of ${provider.totalDistros} tracked active distros. Lower rank indicates higher relative search and usage popularity.",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? Colors.white38 : Colors.black45,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
                   // About
                   _buildSectionTitle("About", Icons.info_outline_rounded),
                   const SizedBox(height: 12),
@@ -201,7 +241,7 @@ class DetailScreen extends StatelessWidget {
                       color: isDark ? const Color(0xFF150D2E) : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark ? Colors.white10 : Colors.black08,
+                        color: isDark ? Colors.white10 : Colors.black12,
                       ),
                     ),
                     child: Text(
@@ -228,11 +268,11 @@ class DetailScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
                           color: isDefault
-                              ? distroColor.withOpacity(isDark ? 0.25 : 0.12)
+                              ? distroColor.withValues(alpha: isDark ? 0.25 : 0.12)
                               : (isDark ? const Color(0xFF150D2E) : Colors.grey.shade100),
                           borderRadius: BorderRadius.circular(12),
                           border: isDefault
-                              ? Border.all(color: distroColor.withOpacity(0.5), width: 1.5)
+                              ? Border.all(color: distroColor.withValues(alpha: 0.5), width: 1.5)
                               : null,
                         ),
                         child: Row(
@@ -258,7 +298,7 @@ class DetailScreen extends StatelessWidget {
                                 "default",
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: distroColor.withOpacity(0.7),
+                                  color: distroColor.withValues(alpha: 0.7),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -323,7 +363,7 @@ class DetailScreen extends StatelessWidget {
                       return Chip(
                         label: Text(ta, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                         avatar: Icon(Icons.person_rounded, size: 16, color: distroColor),
-                        backgroundColor: distroColor.withOpacity(isDark ? 0.15 : 0.08),
+                        backgroundColor: distroColor.withValues(alpha: isDark ? 0.15 : 0.08),
                       );
                     }).toList(),
                   ),
@@ -380,7 +420,7 @@ class DetailScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -433,7 +473,7 @@ class DetailScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF150D2E) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.black08),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,7 +481,7 @@ class DetailScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 14, color: color.withOpacity(0.7)),
+              Icon(icon, size: 14, color: color.withValues(alpha: 0.7)),
               const SizedBox(width: 4),
               Text(
                 label,
@@ -472,7 +512,7 @@ class DetailScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF150D2E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -500,7 +540,7 @@ class DetailScreen extends StatelessWidget {
                 Icon(
                   title == "Pros" ? Icons.add_circle_rounded : Icons.remove_circle_rounded,
                   size: 12,
-                  color: color.withOpacity(0.6),
+                  color: color.withValues(alpha: 0.6),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
